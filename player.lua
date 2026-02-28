@@ -30,6 +30,18 @@ local fake_player_methods = {
     get_player_control = function(self)
         return {jump=false, up=false, down=false, left=false, right=false, sneak=false, aux1=false, dig=false, place=false, zoom=false}
     end,
+    get_breath = function(self)
+        local data = self.data or (self.fake_player and self.fake_player.data)
+        assert(data ~= nil, "Fakelib data missing in get_breath")
+        return data.breath or 11 -- Default to full breath (usually 10 or 11 in MT)
+    end,
+    set_breath = function(self, value)
+        local data = self.data or (self.fake_player and self.fake_player.data)
+        assert(data ~= nil, "Fakelib data missing in set_breath")
+        data.breath = value
+        -- We don't need to call the engine object's set_breath because it would return nil/fail
+        return true
+    end,
 }
 
 --- Checks if an object is a (fake) player
@@ -168,4 +180,30 @@ function fakelib.create_player(options)
     setmetatable(instance, mt)
 
     return instance
+end
+
+-- ia_fakelib/player.lua
+
+--- Unifies ObjectRefs into a Player-like interface.
+-- If it's a real player, returns the ObjectRef.
+-- If it's a bridged mob, returns the bridged entity (self).
+-- @param obj The ObjectRef to check.
+-- @return The player-compatible object or nil.
+function fakelib.get_player_interface(obj)
+    if not obj or not obj:is_valid() then return nil end
+
+    -- 1. Real Engine Players
+    if obj:is_player() then
+        return obj
+    end
+
+    -- 2. Bridged Mobs
+    -- We check the luaentity. If it has been bridged,
+    -- its is_player() method (from fake_player_methods) will return true.
+    local ent = obj:get_luaentity()
+    if ent and ent.is_player and ent:is_player() then
+        return ent
+    end
+
+    return nil
 end
