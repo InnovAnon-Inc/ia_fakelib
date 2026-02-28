@@ -1,514 +1,1351 @@
+-------- fakelib/player.lua
+--
+-- ORIGINAL
+-- NOTE ia_fake_player/init.lua provides a comprehensive set of functions to bridge the player and entity APIs
+--
+--local fake_player = {is_fake_player = true}
+--local identifier = "fakelib:player"
+--local check, secure_table = ...
+--
+--local player_controls = {
+--	up = 1, down = 2, left = 4, right = 8, jump = 16,
+--	aux1 = 32, sneak = 64, dig = 128, place = 256, zoom = 512,
+--}
+--
+---- API functions
+------------------------------------------
+--
+--function fakelib.is_player(x)
+--	if type(x) == "userdata" and x.is_player and x:is_player() then
+--		return true
+--	elseif type(x) == "table" and getmetatable(x) == identifier then
+--		return true
+--	end
+--	return false
+--end
+--
+--function fakelib.create_player(options)
+--	local data = {}
+--	if type(options) == "table" then
+--		if type(options.name) == "string" then
+--			data.name = options.name
+--		end
+--		if fakelib.is_vector(options.position) then
+--			data.position = vector.copy(options.position)
+--		end
+--		if fakelib.is_vector(options.direction) then
+--			local dir = vector.normalize(options.direction)
+--			data.pitch = -math.asin(dir.y)
+--			data.yaw = math.atan2(-dir.x, dir.z) % (math.pi * 2)
+--		end
+--		if type(options.controls) == "table" then
+--			data.controls = {}
+--			for name in pairs(player_controls) do
+--				data.controls[name] = options.controls[name] == true
+--			end
+--			data.controls.dig = data.controls.dig or options.controls.LMB
+--			data.controls.place = data.controls.place or options.controls.RMB
+--		end
+--		if fakelib.is_metadata(options.metadata) then
+--			data.metadata = options.metadata
+--		end
+--		if fakelib.is_inventory(options.inventory) then
+--			data.inventory = options.inventory
+--		end
+--		local size = 32
+--		if data.inventory and type(options.wield_list) == "string" then
+--			size = data.inventory:get_size(options.wield_list)
+--			if size > 0 then
+--				data.wield_list = options.wield_list
+--			end
+--		end
+--		if type(options.wield_index) == "number" then
+--			if options.wield_index > 0 and options.wield_index <= size then
+--				data.wield_index = options.wield_index
+--			end
+--		end
+--	elseif type(options) == "string" then
+--		data.name = options
+--	end
+--	return secure_table({data = data}, fake_player, identifier)
+--end
+--
+---- Helper functions
+------------------------------------------
+--
+--local function check_vector(v)
+--	local t = type(v)
+--	if t ~= "table" then
+--		error(string.format("\"Invalid vector (expected table got %s).\"", t), 3)
+--	end
+--	for _,c in ipairs({"x", "y", "z"}) do
+--		t = type(v[c])
+--		if t ~= "number" then
+--			error(string.format("\"Invalid vector coordinate %s (expected number got %s).\"", c, t), 3)
+--		end
+--	end
+--end
+--
+--local function new_fake_guid()
+--	return string.format("@fakeplayer%d%d", os.time(), math.random(100, 999))
+--end
+--
+---- Dynamic get/set functions
+------------------------------------------
+--
+--function fake_player:get_player_name()
+--	return self.data.name or ""
+--end
+--
+--function fake_player:get_guid()
+--	if not self.data.guid then
+--		self.data.guid = new_fake_guid()
+--	end
+--	return self.data.guid
+--end
+--
+--function fake_player:get_inventory()
+--	if not self.data.inventory then
+--		self.data.inventory = fakelib.create_inventory({
+--			main = 32, craft = 9, craftpreview = 1, craftresult = 1
+--		})
+--	end
+--	return self.data.inventory
+--end
+--
+--function fake_player:get_meta()
+--	if not self.data.metadata then
+--		self.data.metadata = fakelib:create_metadata()
+--	end
+--	return self.data.metadata
+--end
+--
+--function fake_player:get_look_dir()
+--	local p, y = self.data.pitch or 0, self.data.yaw or 0
+--	return vector.new(math.sin(-y) * math.cos(p), math.sin(-p), math.cos(y) * math.cos(p))
+--end
+--
+--function fake_player:get_look_horizontal()
+--	return self.data.yaw or 0
+--end
+--
+--function fake_player:set_look_horizontal(value)
+--	check(1, value, "number")
+--	self.data.yaw = value % (math.pi * 2)
+--end
+--
+--function fake_player:get_look_vertical()
+--	return self.data.pitch or 0
+--end
+--
+--function fake_player:set_look_vertical(value)
+--	check(1, value, "number")
+--	self.data.pitch = math.max(-math.pi / 2, math.min(value, math.pi / 2))
+--end
+--
+--function fake_player:get_player_control()
+--	local controls = {}
+--	if self.data.controls then
+--		for name in pairs(player_controls) do
+--			controls[name] = self.data.controls[name]
+--		end
+--	else
+--		for name in pairs(player_controls) do
+--			controls[name] = false
+--		end
+--	end
+--	controls.LMB = controls.dig
+--	controls.RMB = controls.place
+--	controls.movement_x = 0
+--	controls.movement_y = 0
+--	return controls
+--end
+--
+--function fake_player:get_player_control_bits()
+--	if not self.data.controls then
+--		return 0
+--	end
+--	local total = 0
+--	for name, value in pairs(player_controls) do
+--		total = total + self.data.controls[name] and value or 0
+--	end
+--	return total
+--end
+--
+--function fake_player:get_pos()
+--	if self.data.position then
+--		return vector.copy(self.data.position)
+--	end
+--	return vector.zero()
+--end
+--
+--function fake_player:set_pos(pos)
+--	check_vector(pos)
+--	self.data.position = vector.copy(pos)
+--end
+--fake_player.move_to = fake_player.set_pos
+--
+--function fake_player:add_pos(pos)
+--	check_vector(pos)
+--	if self.data.position then
+--		self.data.position = vector.add(self.data.position, pos)
+--	else
+--		self.data.position = vector.copy(pos)
+--	end
+--end
+--
+--function fake_player:get_wield_index()
+--	return self.data.wield_index or 1
+--end
+--
+--function fake_player:get_wield_list()
+--	return self.data.wield_list or "main"
+--end
+--
+--function fake_player:get_wielded_item()
+--	if self.data.inventory then
+--		return self.data.inventory:get_stack(self:get_wield_list(), self:get_wield_index())
+--	end
+--	return ItemStack()
+--end
+--
+--function fake_player:set_wielded_item(stack)
+--	stack = ItemStack(stack)
+--	if not self.data.inventory and stack:is_empty() then
+--		return true
+--	end
+--	self:get_inventory():set_stack(self:get_wield_list(), self:get_wield_index(), stack)
+--	return true
+--end
+--
+---- Static get functions
+------------------------------------------
+--
+--function fake_player.is_player()
+--	return true
+--end
+--
+--function fake_player.get_animation()
+--	return {x = 1, y = 1}, 15, 0, true
+--end
+--
+--function fake_player.get_armor_groups()
+--	return {immortal = 1}
+--end
+--
+--function fake_player.get_bone_override()
+--	return {
+--		position = {absolute = false, vec = vector.zero(), interpolation = 0},
+--		rotation = {absolute = false, vec = vector.zero(), interpolation = 0},
+--		scale = {absolute = false, vec = vector.new(1, 1, 1), interpolation = 0},
+--	}
+--end
+--
+--function fake_player.get_bone_overrides()
+--	return {}
+--end
+--
+--function fake_player.get_bone_position()
+--	return vector.zero(), vector.zero()
+--end
+--
+--function fake_player.get_breath()
+--	return 10
+--end
+--
+--function fake_player.get_camera()
+--	return {mode = "any"}
+--end
+--
+--function fake_player.get_children()
+--	return {}
+--end
+--
+--function fake_player.get_clouds()
+--	return {
+--		ambient = {r = 0, g = 0, b = 0, a = 255},
+--		color = {r = 240, g = 240, b = 255, a = 229},
+--		density = 0.4,
+--		height = 120,
+--		speed = {x = 0, y = -2},
+--		thickness = 16,
+--	}
+--end
+--
+--function fake_player.get_eye_offset()
+--	return vector.zero(), vector.zero(), vector.zero()
+--end
+--
+--function fake_player.get_flags()
+--	return {
+--		breathing = true,
+--		drowning = true,
+--		node_damage = true,
+--	}
+--end
+--
+--function fake_player.get_formspec_prepend()
+--	return ""
+--end
+--
+--function fake_player.get_fov()
+--	return 0, false, 0
+--end
+--
+--function fake_player.get_hp()
+--	return 20
+--end
+--
+--function fake_player.get_inventory_formspec()
+--	return ""
+--end
+--
+--function fake_player.get_lighting()
+--	return {
+--		exposure = {
+--			speed_bright_dark = 1000,
+--			center_weight_power = 1,
+--			luminance_min = -3,
+--			luminance_max = -3,
+--			exposure_correction = 0,
+--			speed_dark_bright = 1000
+--		},
+--		saturation = 1,
+--		shadows = {intensity = 0},
+--		volumetric_light = {strength = 0},
+--	}
+--end
+--
+--function fake_player.get_local_animation()
+--	return {x = 0, y = 0}, {x = 0, y = 0}, {x = 0, y = 0}, {x = 0, y = 0}, 0
+--end
+--
+--function fake_player.get_moon()
+--	return {
+--		scale = 1,
+--		texture = "moon.png",
+--		tonemap = "moon_tonemap.png",
+--		visible = true,
+--	}
+--end
+--
+--function fake_player.get_nametag_attributes()
+--	return {
+--		bgcolor = false,
+--		color = {r = 255, g = 255, b = 255, a = 255},
+--		text = "",
+--	}
+--end
+--
+--function fake_player.get_physics_override()
+--	return {
+--		acceleration_air = 1, acceleration_default = 1, acceleration_fast = 1,
+--		gravity = 1, jump = 1, speed = 1,
+--		liquid_fluidity = 1, liquid_fluidity_smooth = 1, liquid_sink = 1,
+--		speed_climb = 1, speed_crouch = 1, speed_fast = 1, speed_walk = 1,
+--		new_move = true, sneak = true, sneak_glitch = false,
+--	}
+--end
+--
+--function fake_player.get_properties()
+--	return {
+--		automatic_face_movement_dir = false,
+--		automatic_face_movement_max_rotation_per_sec = -1,
+--		automatic_rotate = 0,
+--		backface_culling = false,
+--		breath_max = 10,
+--		collide_with_objects = true,
+--		collisionbox = {-0.5, -0.5, -0.5, 0.5, 0.5, 0.5},
+--		colors = {{r = 255, g = 255, b = 255, a = 255}},
+--		damage_texture_modifier = "^[brighten",
+--		eye_height = 0,
+--		glow = 0,
+--		hp_max = 20,
+--		infotext = "",
+--		initial_sprite_basepos = {x = 0, y = 0},
+--		is_visible = true,
+--		makes_footstep_sound = true,
+--		mesh = "",
+--		nametag = "",
+--		nametag_bgcolor = false,
+--		nametag_color = {r = 255, g = 255, b = 255, a = 255},
+--		physical = false,
+--		pointable = true,
+--		selectionbox = {-0.5, -0.5, -0.5, 0.5, 0.5, 0.5, rotate = false},
+--		shaded = true,
+--		show_on_minimap = true,
+--		spritediv = {x = 1, y = 1},
+--		static_save = true,
+--		stepheight = 0.6,
+--		textures = {"blank.png"},
+--		use_texture_alpha = false,
+--		visual = "cube",
+--		visual_size = vector.new(1, 1, 1),
+--		wield_item = "",
+--		zoom_fov = 15,
+--	}
+--end
+--
+--function fake_player.get_sky_color()
+--	return fake_player.get_sky(true).sky_color
+--end
+--
+--function fake_player.get_sky(as_table)
+--	if as_table then
+--		return {
+--			base_color = {r = 255, g = 255, b = 255, a = 255},
+--			clouds = true,
+--			fog = {fog_distance = -1, fog_start = -1},
+--			sky_color = {
+--				day_sky = {r = 97, g = 181, b = 245, a = 255},
+--				day_horizon = {r = 144, g = 211, b = 246, a = 255},
+--				dawn_sky = {r = 180, g = 186, b = 250, a = 255},
+--				dawn_horizon = {r = 186, g = 193, b = 240, a = 255},
+--				night_sky = {r = 0, g = 107, b = 255, a = 255},
+--				night_horizon = {r = 64, g = 144, b = 255, a = 255},
+--				indoors = {r = 100, g = 100, b = 100, a = 255},
+--				fog_sun_tint = {r = 244, g = 125, b = 29, a = 255},
+--				fog_moon_tint = {r = 128, g = 153, b = 204, a = 255},
+--				fog_tint_type = "default",
+--			},
+--			textures = {},
+--			type = "regular",
+--		}
+--	end
+--	return {r = 255, g = 255, b = 255, a = 255}, "regular", {}, true
+--end
+--
+--function fake_player.get_stars()
+--	return {
+--		count = 1000,
+--		day_opacity = 0,
+--		scale = 1,
+--		star_color = {r = 235, g = 235, b = 255, a = 105},
+--		visible = true,
+--	}
+--end
+--
+--function fake_player.get_sun()
+--	return {
+--		scale = 1,
+--		sunrise = "sunrisebg.png",
+--		sunrise_visible = true,
+--		texture = "sun.png",
+--		tonemap = "sun_tonemap.png",
+--		visible = true,
+--	}
+--end
+--
+--function fake_player.get_velocity()
+--	return vector.zero()
+--end
+--
+--function fake_player.hud_get_all()
+--	return {}
+--end
+--
+--function fake_player.hud_get_flags()
+--	return {
+--		basic_debug = false,
+--		breathbar = false,
+--		chat = false,
+--		crosshair = false,
+--		healthbar = false,
+--		hotbar = false,
+--		minimap = false,
+--		minimap_radar = false,
+--		wielditem = false,
+--	}
+--end
+--
+--function fake_player.hud_get_hotbar_image()
+--	return ""
+--end
+--
+--function fake_player.hud_get_hotbar_itemcount()
+--	return 8
+--end
+--
+--function fake_player.hud_get_hotbar_selected_image()
+--	return ""
+--end
+--
+--function fake_player.is_valid()
+--	return true
+--end
+--
+---- No-op functions
+------------------------------------------
+--do
+--	local functions = {
+--		-- Lua entity only (no-op for players)
+--		"get_acceleration", "get_entity_name", "get_luaentity", "get_rotation",
+--		"get_texture_mod", "get_yaw", "getacceleration", "getyaw", "remove",
+--		"set_acceleration", "set_rotation", "set_sprite", "set_texture_mod",
+--		"set_velocity", "set_yaw", "setacceleration", "setsprite",
+--		"settexturemod", "setvelocity", "setyaw",
+--		-- Non-functional get/set functions
+--		"add_velocity", "get_attach", "get_attribute", "get_day_night_ratio",
+--		"get_observers", "get_effective_observers",
+--		"hud_add", "hud_change", "hud_get", "hud_remove", "hud_set_flags",
+--		"hud_set_hotbar_image", "hud_set_hotbar_itemcount",
+--		"hud_set_hotbar_selected_image", "override_day_night_ratio",
+--		"set_animation", "set_animation_frame_speed", "set_armor_groups",
+--		"set_attach", "set_attribute", "set_bone_override", "set_bone_position",
+--		"set_breath", "set_camera", "set_clouds", "set_detach",
+--		"set_eye_offset", "set_formspec_prepend", "set_flags", "set_fov",
+--		"set_hp", "set_inventory_formspec", "set_lighting",
+--		"set_local_animation", "set_minimap_modes", "set_moon",
+--		"set_nametag_attributes", "set_observers", "set_physics_override",
+--		"set_properties", "set_sky", "set_stars", "set_sun",
+--		-- Other functions that do nothing
+--		"punch", "respawn", "right_click", "send_mapblock",
+--	}
+--	for _,func in ipairs(functions) do
+--		fake_player[func] = function() end
+--	end
+--end
+--
+---- Deprecated functions
+------------------------------------------
+--
+--function fake_player:get_look_pitch()
+--	return self:get_look_vertical() * -1
+--end
+--
+--function fake_player:get_look_yaw()
+--	return self:get_look_horizontal() + math.pi / 2
+--end
+--
+--fake_player.set_look_pitch = fake_player.set_look_vertical
+--fake_player.set_look_yaw = fake_player.set_look_horizontal
+--fake_player.getpos = fake_player.get_pos
+--fake_player.setpos = fake_player.set_pos
+--fake_player.moveto = fake_player.set_pos
+--fake_player.getvelocity = fake_player.get_velocity
+--fake_player.add_player_velocity = fake_player.add_velocity
+--fake_player.get_player_velocity = fake_player.get_velocity
+--
+--
+--
+--
+--
+--
+--
+--
+--
+--
+--
+------
+------local fake_player = {is_fake_player = true}
+------local identifier = "fakelib:player"
+------local check, secure_table = ...
+------
+------local player_controls = {
+------	up = 1, down = 2, left = 4, right = 8, jump = 16,
+------	aux1 = 32, sneak = 64, dig = 128, place = 256, zoom = 512,
+------}
+------
+-------- API functions
+----------------------------------------------
+------
+------function fakelib.is_player(x)
+------	if type(x) == "userdata" and x.is_player and x:is_player() then
+------		return true
+------	elseif type(x) == "table" and getmetatable(x) == identifier then
+------		return true
+------	end
+------	return false
+------end
+------
+------function fakelib.create_player(options)
+------	local data = {}
+------	data.model      = "3d_armor_character.b3d" -- Default for 3d_armor
+------	data.metadata   = data.metadata  or fakelib.create_metadata()
+------    	data.inventory  = data.inventory or fake_player.get_inventory({data = data})
+------	data.properties = fake_player.get_default_properties()
+------	if type(options) == "table" then
+------		data.object = options.object
+------		if type(options.name) == "string" then
+------			data.name = options.name
+------		end
+------		if fakelib.is_vector(options.position) then
+------			data.position = vector.copy(options.position)
+------		end
+------		if fakelib.is_vector(options.direction) then
+------			local dir = vector.normalize(options.direction)
+------			data.pitch = -math.asin(dir.y)
+------			data.yaw = math.atan2(-dir.x, dir.z) % (math.pi * 2)
+------		end
+------		if type(options.controls) == "table" then
+------			data.controls = {}
+------			for name in pairs(player_controls) do
+------				data.controls[name] = options.controls[name] == true
+------			end
+------			data.controls.dig = data.controls.dig or options.controls.LMB
+------			data.controls.place = data.controls.place or options.controls.RMB
+------		end
+------		if fakelib.is_metadata(options.metadata) then
+------			data.metadata = options.metadata
+------		end
+------		if fakelib.is_inventory(options.inventory) then
+------			data.inventory = options.inventory
+------		end
+------		local size = 32
+------		if data.inventory and type(options.wield_list) == "string" then
+------			size = data.inventory:get_size(options.wield_list)
+------			if size > 0 then
+------				data.wield_list = options.wield_list
+------			end
+------		end
+------		if type(options.wield_index) == "number" then
+------			if options.wield_index > 0 and options.wield_index <= size then
+------				data.wield_index = options.wield_index
+------			end
+------		end
+------	elseif type(options) == "string" then
+------		data.name = options
+------	end
+------	return secure_table({data = data}, fake_player, identifier)
+------end
+------
+-------- Helper functions
+----------------------------------------------
+------
+------local function check_vector(v)
+------	local t = type(v)
+------	if t ~= "table" then
+------		error(string.format("\"Invalid vector (expected table got %s).\"", t), 3)
+------	end
+------	for _,c in ipairs({"x", "y", "z"}) do
+------		t = type(v[c])
+------		if t ~= "number" then
+------			error(string.format("\"Invalid vector coordinate %s (expected number got %s).\"", c, t), 3)
+------		end
+------	end
+------end
+------
+-------- Dynamic get/set functions
+----------------------------------------------
+------
+------function fake_player:get_player_name()
+------	return self.data.name or ""
+------end
+------
+------function fake_player:get_inventory()
+------	if not self.data.inventory then
+------		self.data.inventory = fakelib.create_inventory({
+------			--main = 32, craft = 9, craftpreview = 1, craftresult = 1
+------			main = 32, craft = 9, craftpreview = 1, craftresult = 1, hand = 1, armor = 6,
+------		})
+------	end
+------	return self.data.inventory
+------end
+------
+------function fake_player:get_meta()
+------	if not self.data.metadata then
+------		self.data.metadata = fakelib:create_metadata()
+------	end
+------	return self.data.metadata
+------end
+------
+------function fake_player:get_look_dir()
+------	local p, y = self.data.pitch or 0, self.data.yaw or 0
+------	return vector.new(math.sin(-y) * math.cos(p), math.sin(-p), math.cos(y) * math.cos(p))
+------end
+------
+------function fake_player:get_look_horizontal()
+------	return self.data.yaw or 0
+------end
+------
+------function fake_player:set_look_horizontal(value)
+------	check(1, value, "number")
+------	self.data.yaw = value % (math.pi * 2)
+------end
+------
+------function fake_player:get_look_vertical()
+------	return self.data.pitch or 0
+------end
+------
+------function fake_player:set_look_vertical(value)
+------	check(1, value, "number")
+------	self.data.pitch = math.max(-math.pi / 2, math.min(value, math.pi / 2))
+------end
+------
+------function fake_player:get_player_control()
+------	local controls = {}
+------	if self.data.controls then
+------		for name in pairs(player_controls) do
+------			controls[name] = self.data.controls[name]
+------		end
+------	else
+------		for name in pairs(player_controls) do
+------			controls[name] = false
+------		end
+------	end
+------	controls.LMB = controls.dig
+------	controls.RMB = controls.place
+------	controls.movement_x = 0
+------	controls.movement_y = 0
+------	return controls
+------end
+------
+------function fake_player:get_player_control_bits()
+------	if not self.data.controls then
+------		return 0
+------	end
+------	local total = 0
+------	for name, value in pairs(player_controls) do
+------		total = total + self.data.controls[name] and value or 0
+------	end
+------	return total
+------end
+------
+------function fake_player:get_pos()
+------	if self.data.position then
+------		return vector.copy(self.data.position)
+------	end
+------	return vector.zero()
+------end
+------
+------function fake_player:set_pos(pos)
+------	check_vector(pos)
+------	self.data.position = vector.copy(pos)
+------end
+------fake_player.move_to = fake_player.set_pos
+------
+------function fake_player:add_pos(pos)
+------	check_vector(pos)
+------	if self.data.position then
+------		self.data.position = vector.add(self.data.position, pos)
+------	else
+------		self.data.position = vector.copy(pos)
+------	end
+------end
+------
+------function fake_player:get_wield_index()
+------	return self.data.wield_index or 1
+------end
+------
+------function fake_player:get_wield_list()
+------	return self.data.wield_list or "main"
+------end
+------
+------function fake_player:get_wielded_item()
+------	if self.data.inventory then
+------		return self.data.inventory:get_stack(self:get_wield_list(), self:get_wield_index())
+------	end
+------	return ItemStack()
+------end
+------
+------function fake_player:set_wielded_item(stack)
+------	stack = ItemStack(stack)
+------	if not self.data.inventory and stack:is_empty() then
+------		return true
+------	end
+------	self:get_inventory():set_stack(self:get_wield_list(), self:get_wield_index(), stack)
+------	return true
+------end
+------
+-------- Static get functions
+----------------------------------------------
+------
+------function fake_player.is_player()
+------	return true
+------end
+------
+------function fake_player.get_animation()
+------	return {x = 1, y = 1}, 15, 0, true
+------end
+------
+------function fake_player.get_armor_groups()
+------	return {immortal = 1}
+------end
+------
+------function fake_player.get_bone_override()
+------	return {
+------		position = {absolute = false, vec = vector.zero(), interpolation = 0},
+------		rotation = {absolute = false, vec = vector.zero(), interpolation = 0},
+------		scale = {absolute = false, vec = vector.new(1, 1, 1), interpolation = 0},
+------	}
+------end
+------
+------function fake_player.get_bone_overrides()
+------	return {}
+------end
+------
+------function fake_player.get_bone_position()
+------	return vector.zero(), vector.zero()
+------end
+------
+------function fake_player.get_breath()
+------	return 10
+------end
+------
+------function fake_player.get_camera()
+------	return {mode = "any"}
+------end
+------
+------function fake_player.get_children()
+------	return {}
+------end
+------
+------function fake_player.get_clouds()
+------	return {
+------		ambient = {r = 0, g = 0, b = 0, a = 255},
+------		color = {r = 240, g = 240, b = 255, a = 229},
+------		density = 0.4,
+------		height = 120,
+------		speed = {x = 0, y = -2},
+------		thickness = 16,
+------	}
+------end
+------
+------function fake_player.get_eye_offset()
+------	return vector.zero(), vector.zero(), vector.zero()
+------end
+------
+------function fake_player.get_flags()
+------	return {
+------		breathing = true,
+------		drowning = true,
+------		node_damage = true,
+------	}
+------end
+------
+------function fake_player.get_formspec_prepend()
+------	return ""
+------end
+------
+------function fake_player.get_fov()
+------	return 0, false, 0
+------end
+------
+------function fake_player.get_hp()
+------	return 20
+------end
+------
+------function fake_player.get_inventory_formspec()
+------	return ""
+------end
+------
+------function fake_player.get_lighting()
+------	return {
+------		exposure = {
+------			speed_bright_dark = 1000,
+------			center_weight_power = 1,
+------			luminance_min = -3,
+------			luminance_max = -3,
+------			exposure_correction = 0,
+------			speed_dark_bright = 1000
+------		},
+------		saturation = 1,
+------		shadows = {intensity = 0},
+------		volumetric_light = {strength = 0},
+------	}
+------end
+------
+------function fake_player.get_local_animation()
+------	return {x = 0, y = 0}, {x = 0, y = 0}, {x = 0, y = 0}, {x = 0, y = 0}, 0
+------end
+------
+------function fake_player.get_moon()
+------	return {
+------		scale = 1,
+------		texture = "moon.png",
+------		tonemap = "moon_tonemap.png",
+------		visible = true,
+------	}
+------end
+------
+------function fake_player.get_nametag_attributes()
+------	return {
+------		bgcolor = false,
+------		color = {r = 255, g = 255, b = 255, a = 255},
+------		text = "",
+------	}
+------end
+------
+------function fake_player.get_physics_override()
+------	return {
+------		acceleration_air = 1, acceleration_default = 1, acceleration_fast = 1,
+------		gravity = 1, jump = 1, speed = 1,
+------		liquid_fluidity = 1, liquid_fluidity_smooth = 1, liquid_sink = 1,
+------		speed_climb = 1, speed_crouch = 1, speed_fast = 1, speed_walk = 1,
+------		new_move = true, sneak = true, sneak_glitch = false,
+------	}
+------end
+------
+--------function fake_player.get_properties()
+--------	return {
+--------		automatic_face_movement_dir = false,
+--------		automatic_face_movement_max_rotation_per_sec = -1,
+--------		automatic_rotate = 0,
+--------		backface_culling = false,
+--------		breath_max = 10,
+--------		collide_with_objects = true,
+--------		collisionbox = {-0.5, -0.5, -0.5, 0.5, 0.5, 0.5},
+--------		colors = {{r = 255, g = 255, b = 255, a = 255}},
+--------		damage_texture_modifier = "^[brighten",
+--------		eye_height = 0,
+--------		glow = 0,
+--------		hp_max = 20,
+--------		infotext = "",
+--------		initial_sprite_basepos = {x = 0, y = 0},
+--------		is_visible = true,
+--------		makes_footstep_sound = true,
+--------		mesh = "",
+--------		nametag = "",
+--------		nametag_bgcolor = false,
+--------		nametag_color = {r = 255, g = 255, b = 255, a = 255},
+--------		physical = false,
+--------		pointable = true,
+--------		selectionbox = {-0.5, -0.5, -0.5, 0.5, 0.5, 0.5, rotate = false},
+--------		shaded = true,
+--------		show_on_minimap = true,
+--------		spritediv = {x = 1, y = 1},
+--------		static_save = true,
+--------		stepheight = 0.6,
+--------		textures = {"blank.png"},
+--------		use_texture_alpha = false,
+--------		visual = "cube",
+--------		visual_size = vector.new(1, 1, 1),
+--------		wield_item = "",
+--------		zoom_fov = 15,
+--------	}
+--------end
+------
+------function fake_player.get_sky_color()
+------	return fake_player.get_sky(true).sky_color
+------end
+------
+------function fake_player.get_sky(as_table)
+------	if as_table then
+------		return {
+------			base_color = {r = 255, g = 255, b = 255, a = 255},
+------			clouds = true,
+------			fog = {fog_distance = -1, fog_start = -1},
+------			sky_color = {
+------				day_sky = {r = 97, g = 181, b = 245, a = 255},
+------				day_horizon = {r = 144, g = 211, b = 246, a = 255},
+------				dawn_sky = {r = 180, g = 186, b = 250, a = 255},
+------				dawn_horizon = {r = 186, g = 193, b = 240, a = 255},
+------				night_sky = {r = 0, g = 107, b = 255, a = 255},
+------				night_horizon = {r = 64, g = 144, b = 255, a = 255},
+------				indoors = {r = 100, g = 100, b = 100, a = 255},
+------				fog_sun_tint = {r = 244, g = 125, b = 29, a = 255},
+------				fog_moon_tint = {r = 128, g = 153, b = 204, a = 255},
+------				fog_tint_type = "default",
+------			},
+------			textures = {},
+------			type = "regular",
+------		}
+------	end
+------	return {r = 255, g = 255, b = 255, a = 255}, "regular", {}, true
+------end
+------
+------function fake_player.get_stars()
+------	return {
+------		count = 1000,
+------		day_opacity = 0,
+------		scale = 1,
+------		star_color = {r = 235, g = 235, b = 255, a = 105},
+------		visible = true,
+------	}
+------end
+------
+------function fake_player.get_sun()
+------	return {
+------		scale = 1,
+------		sunrise = "sunrisebg.png",
+------		sunrise_visible = true,
+------		texture = "sun.png",
+------		tonemap = "sun_tonemap.png",
+------		visible = true,
+------	}
+------end
+------
+--------function fake_player.get_velocity()
+--------	return vector.zero()
+--------end
+------
+------function fake_player.hud_get_all()
+------	return {}
+------end
+------
+------function fake_player.hud_get_flags()
+------	return {
+------		basic_debug = false,
+------		breathbar = false,
+------		chat = false,
+------		crosshair = false,
+------		healthbar = false,
+------		hotbar = false,
+------		minimap = false,
+------		minimap_radar = false,
+------		wielditem = false,
+------	}
+------end
+------
+------function fake_player.hud_get_hotbar_image()
+------	return ""
+------end
+------
+------function fake_player.hud_get_hotbar_itemcount()
+------	return 8
+------end
+------
+------function fake_player.hud_get_hotbar_selected_image()
+------	return ""
+------end
+------
+------function fake_player.is_valid()
+------	return true
+------end
+------
+-------- No-op functions
+----------------------------------------------
+------do
+------	local functions = {
+------		-- Lua entity only (no-op for players)
+------		--"get_acceleration",
+------		"get_entity_name", -- TODO
+------		--"get_luaentity", "get_rotation", "get_texture_mod", "get_yaw",
+------		"getacceleration", -- TODO
+------		--"getyaw", "remove",
+------		--"set_acceleration", "set_rotation", "set_sprite", "set_texture_mod", "set_velocity", "set_yaw",
+------		"setacceleration", -- TODO
+------		"setsprite", -- TODO
+------		"settexturemod", "setvelocity", "setyaw",
+------		-- Non-functional get/set functions
+------		"add_velocity", "get_attach", "get_attribute", "get_day_night_ratio",
+------		"get_observers", "get_effective_observers",
+------		"hud_add", "hud_change", "hud_get", "hud_remove", "hud_set_flags",
+------		"hud_set_hotbar_image", "hud_set_hotbar_itemcount",
+------		"hud_set_hotbar_selected_image", "override_day_night_ratio",
+------		--"set_animation",
+------		"set_animation_frame_speed",
+------		--"set_armor_groups",
+------		"set_attach", "set_attribute", "set_bone_override", "set_bone_position",
+------		"set_breath", "set_camera", "set_clouds", "set_detach",
+------		"set_eye_offset", "set_formspec_prepend", "set_flags", "set_fov",
+------		"set_hp", "set_inventory_formspec", "set_lighting",
+------		"set_local_animation", "set_minimap_modes", "set_moon",
+------		"set_nametag_attributes", "set_observers", "set_physics_override",
+--------		"set_properties",
+------		"set_sky", "set_stars", "set_sun",
+------		-- Other functions that do nothing
+------		--"punch",
+------		"respawn", "right_click", "send_mapblock",
+------	}
+------	for _,func in ipairs(functions) do
+------		fake_player[func] = function() end
+------	end
+------end
+------
+---------
+------
+-------- Returns the static default property table
+------function fake_player.get_default_properties()
+------    return {
+------        visual = "mesh",
+------        mesh = "character.b3d",
+------        textures = {"character.png"},
+------        visual_size = {x=1, y=1, z=1},
+------        collisionbox = {-0.3, 0.0, -0.3, 0.3, 1.7, 0.3},
+------        stepheight = 0.6,
+------        eye_height = 1.62,
+------        hp_max = 20,
+------        breath_max = 10,
+------        physical = true,
+------        pointable = true,
+------        is_visible = true,
+------        makes_footstep_sound = true,
+------    }
+------end
+------
+------
+-------- Deprecated functions
+----------------------------------------------
+------
+------function fake_player:get_look_pitch()
+------	return self:get_look_vertical() * -1
+------end
+------
+------function fake_player:get_look_yaw()
+------	return self:get_look_horizontal() + math.pi / 2
+------end
+------
+------fake_player.set_look_pitch = fake_player.set_look_vertical
+------fake_player.set_look_yaw = fake_player.set_look_horizontal
+------fake_player.getpos = fake_player.get_pos
+------fake_player.setpos = fake_player.set_pos
+------fake_player.moveto = fake_player.set_pos
+------fake_player.getvelocity = fake_player.get_velocity
+------fake_player.add_player_velocity = fake_player.add_velocity
+------fake_player.get_player_velocity = fake_player.get_velocity
+------
+------
+------
+------
+-------- Helper to route calls to the physical object if it exists
+------local function entity_call(self, method, ...)
+------    local obj = self.data.object
+------    if obj and obj:get_luaentity() then
+------        local func = obj[method]
+------        if type(func) == "function" then
+------            return func(obj, ...)
+------        end
+------    end
+------end
+------
+-------- 1. PHYSICAL PROXIES (from your ia_fake_player)
+-------- These ensure that when a mod calls player:set_x, the NPC actually moves/changes.
+------function fake_player:set_properties(props)
+------    self.data.properties = self.data.properties or fake_player.get_default_properties()
+------    for k, v in pairs(props) do self.data.properties[k] = v end
+------    return entity_call(self, "set_properties", props)
+------end
+------
+------function fake_player:set_animation(...)
+------    return entity_call(self, "set_animation", ...)
+------end
+------
+------function fake_player:set_armor_groups(groups)
+------    return entity_call(self, "set_armor_groups", groups)
+------end
+------
+------function fake_player:punch(...)
+------    return entity_call(self, "punch", ...)
+------end
+------
+-------- 2. STATEFUL OVERRIDES (The "fakelib" value-add)
+-------- We prioritize the stored DATA for these, but can sync with the object.
+------function fake_player:get_meta()
+------    if not self.data.metadata then
+------        self.data.metadata = fakelib.create_metadata()
+------    end
+------    return self.data.metadata
+------end
+------
+------function fake_player:get_inventory()
+------    if not self.data.inventory then
+------        self.data.inventory = fakelib.create_inventory({
+------            main = 32, craft = 9, hand = 1, armor = 6
+------        })
+------    end
+------    return self.data.inventory
+------end
+------
+-------- 3. UPDATED CONSTRUCTOR
+------function fakelib.create_player(options)
+------    local data = {}
+------    -- Bind the physical object immediately if provided
+------    if type(options) == "table" then
+------        data.object = options.object
+------        data.name = options.name or "unknown"
+------    else
+------        data.name = options or "unknown"
+------    end
+------
+------    -- Initialize internal state containers
+------    data.properties = fake_player.get_default_properties()
+------
+------    return secure_table({data = data}, fake_player, identifier)
+------end
+----
 ------ fakelib/player.lua
+------ FIXME completely attempts to duplicate the underlying ia_fake_player... shouldn't all that entity_call stuff not exist at all, since we're supposed to be built on top of ia_fakeplayer ????????
 ----
 ----local fake_player = {is_fake_player = true}
 ----local identifier = "fakelib:player"
 ----local check, secure_table = ...
 ----
 ----local player_controls = {
-----	up = 1, down = 2, left = 4, right = 8, jump = 16,
-----	aux1 = 32, sneak = 64, dig = 128, place = 256, zoom = 512,
+----    up = 1, down = 2, left = 4, right = 8, jump = 16,
+----    aux1 = 32, sneak = 64, dig = 128, place = 256, zoom = 512,
 ----}
+----
+------ Internal Helpers
+--------------------------------------------
+----
+----local function check_vector(v)
+----    if type(v) ~= "table" or type(v.x) ~= "number" or type(v.y) ~= "number" or type(v.z) ~= "number" then
+----        error(string.format("Invalid vector (expected {x,y,z}, got %s)", type(v)), 3)
+----    end
+----end
+----
+----local function entity_call(self, method, ...)
+----    local obj = self.data.object
+----    -- Ensure object exists and is still a valid Luanti ObjectRef
+----    if obj and obj:get_pos() then
+----        local func = obj[method]
+----        if type(func) == "function" then
+----            return func(obj, ...)
+----        end
+----    end
+----end
 ----
 ------ API functions
 --------------------------------------------
 ----
 ----function fakelib.is_player(x)
-----	if type(x) == "userdata" and x.is_player and x:is_player() then
-----		return true
-----	elseif type(x) == "table" and getmetatable(x) == identifier then
-----		return true
-----	end
-----	return false
+----    if type(x) == "userdata" and x.is_player and x:is_player() then
+----        return true
+----    elseif type(x) == "table" and getmetatable(x) == identifier then
+----        return true
+----    end
+----    return false
 ----end
 ----
 ----function fakelib.create_player(options)
-----	local data = {}
-----	data.model      = "3d_armor_character.b3d" -- Default for 3d_armor
-----	data.metadata   = data.metadata  or fakelib.create_metadata()
-----    	data.inventory  = data.inventory or fake_player.get_inventory({data = data})
-----	data.properties = fake_player.get_default_properties()
-----	if type(options) == "table" then
-----		data.object = options.object
-----		if type(options.name) == "string" then
-----			data.name = options.name
-----		end
-----		if fakelib.is_vector(options.position) then
-----			data.position = vector.copy(options.position)
-----		end
-----		if fakelib.is_vector(options.direction) then
-----			local dir = vector.normalize(options.direction)
-----			data.pitch = -math.asin(dir.y)
-----			data.yaw = math.atan2(-dir.x, dir.z) % (math.pi * 2)
-----		end
-----		if type(options.controls) == "table" then
-----			data.controls = {}
-----			for name in pairs(player_controls) do
-----				data.controls[name] = options.controls[name] == true
-----			end
-----			data.controls.dig = data.controls.dig or options.controls.LMB
-----			data.controls.place = data.controls.place or options.controls.RMB
-----		end
-----		if fakelib.is_metadata(options.metadata) then
-----			data.metadata = options.metadata
-----		end
-----		if fakelib.is_inventory(options.inventory) then
-----			data.inventory = options.inventory
-----		end
-----		local size = 32
-----		if data.inventory and type(options.wield_list) == "string" then
-----			size = data.inventory:get_size(options.wield_list)
-----			if size > 0 then
-----				data.wield_list = options.wield_list
-----			end
-----		end
-----		if type(options.wield_index) == "number" then
-----			if options.wield_index > 0 and options.wield_index <= size then
-----				data.wield_index = options.wield_index
-----			end
-----		end
-----	elseif type(options) == "string" then
-----		data.name = options
-----	end
-----	return secure_table({data = data}, fake_player, identifier)
+----    local data = {}
+----    
+----    -- 1. Identity & Physical Link
+----    if type(options) == "table" then
+----        data.object = options.object
+----        data.name = options.name or "unknown"
+----        data.position = options.position and vector.copy(options.position)
+----    else
+----        data.name = options or "unknown"
+----    end
+----
+----    -- 2. Initialize Persistent State
+----    data.properties = fake_player.get_default_properties()
+----    data.metadata = fakelib.create_metadata()
+----    data.inventory = fakelib.create_inventory({
+----        main = 32, craft = 9, craftpreview = 1, craftresult = 1, hand = 1, --armor = 6
+----    })
+----    
+----    -- 3. Controls Setup
+----    data.controls = {}
+----    for name in pairs(player_controls) do data.controls[name] = false end
+----
+----    return secure_table({data = data}, fake_player, identifier)
 ----end
 ----
------- Helper functions
+------ Persistent State Methods (Fakelib Core)
 --------------------------------------------
 ----
-----local function check_vector(v)
-----	local t = type(v)
-----	if t ~= "table" then
-----		error(string.format("\"Invalid vector (expected table got %s).\"", t), 3)
-----	end
-----	for _,c in ipairs({"x", "y", "z"}) do
-----		t = type(v[c])
-----		if t ~= "number" then
-----			error(string.format("\"Invalid vector coordinate %s (expected number got %s).\"", c, t), 3)
-----		end
-----	end
-----end
-----
------- Dynamic get/set functions
---------------------------------------------
-----
-----function fake_player:get_player_name()
-----	return self.data.name or ""
-----end
-----
-----function fake_player:get_inventory()
-----	if not self.data.inventory then
-----		self.data.inventory = fakelib.create_inventory({
-----			--main = 32, craft = 9, craftpreview = 1, craftresult = 1
-----			main = 32, craft = 9, craftpreview = 1, craftresult = 1, hand = 1, armor = 6,
-----		})
-----	end
-----	return self.data.inventory
-----end
-----
-----function fake_player:get_meta()
-----	if not self.data.metadata then
-----		self.data.metadata = fakelib:create_metadata()
-----	end
-----	return self.data.metadata
-----end
-----
-----function fake_player:get_look_dir()
-----	local p, y = self.data.pitch or 0, self.data.yaw or 0
-----	return vector.new(math.sin(-y) * math.cos(p), math.sin(-p), math.cos(y) * math.cos(p))
-----end
-----
-----function fake_player:get_look_horizontal()
-----	return self.data.yaw or 0
-----end
-----
-----function fake_player:set_look_horizontal(value)
-----	check(1, value, "number")
-----	self.data.yaw = value % (math.pi * 2)
-----end
-----
-----function fake_player:get_look_vertical()
-----	return self.data.pitch or 0
-----end
-----
-----function fake_player:set_look_vertical(value)
-----	check(1, value, "number")
-----	self.data.pitch = math.max(-math.pi / 2, math.min(value, math.pi / 2))
-----end
-----
-----function fake_player:get_player_control()
-----	local controls = {}
-----	if self.data.controls then
-----		for name in pairs(player_controls) do
-----			controls[name] = self.data.controls[name]
-----		end
-----	else
-----		for name in pairs(player_controls) do
-----			controls[name] = false
-----		end
-----	end
-----	controls.LMB = controls.dig
-----	controls.RMB = controls.place
-----	controls.movement_x = 0
-----	controls.movement_y = 0
-----	return controls
-----end
-----
-----function fake_player:get_player_control_bits()
-----	if not self.data.controls then
-----		return 0
-----	end
-----	local total = 0
-----	for name, value in pairs(player_controls) do
-----		total = total + self.data.controls[name] and value or 0
-----	end
-----	return total
-----end
+----function fake_player:get_player_name() return self.data.name or "" end
+----function fake_player:get_inventory() return self.data.inventory end
+----function fake_player:get_meta() return self.data.metadata end
 ----
 ----function fake_player:get_pos()
-----	if self.data.position then
-----		return vector.copy(self.data.position)
-----	end
-----	return vector.zero()
+----    return entity_call(self, "get_pos") or vector.copy(self.data.position or vector.zero())
 ----end
 ----
 ----function fake_player:set_pos(pos)
-----	check_vector(pos)
-----	self.data.position = vector.copy(pos)
+----    check_vector(pos)
+----    self.data.position = vector.copy(pos)
+----    entity_call(self, "set_pos", pos)
 ----end
 ----fake_player.move_to = fake_player.set_pos
 ----
-----function fake_player:add_pos(pos)
-----	check_vector(pos)
-----	if self.data.position then
-----		self.data.position = vector.add(self.data.position, pos)
-----	else
-----		self.data.position = vector.copy(pos)
-----	end
-----end
+----function fake_player:get_hp() return self.data.hp or 20 end
+----function fake_player:set_hp(hp) self.data.hp = hp end
 ----
-----function fake_player:get_wield_index()
-----	return self.data.wield_index or 1
-----end
-----
-----function fake_player:get_wield_list()
-----	return self.data.wield_list or "main"
-----end
+----function fake_player:get_wield_index() return self.data.wield_index or 1 end
+----function fake_player:get_wield_list() return self.data.wield_list or "main" end
 ----
 ----function fake_player:get_wielded_item()
-----	if self.data.inventory then
-----		return self.data.inventory:get_stack(self:get_wield_list(), self:get_wield_index())
-----	end
-----	return ItemStack()
+----    return self:get_inventory():get_stack(self:get_wield_list(), self:get_wield_index())
 ----end
 ----
 ----function fake_player:set_wielded_item(stack)
-----	stack = ItemStack(stack)
-----	if not self.data.inventory and stack:is_empty() then
-----		return true
-----	end
-----	self:get_inventory():set_stack(self:get_wield_list(), self:get_wield_index(), stack)
-----	return true
+----    self:get_inventory():set_stack(self:get_wield_list(), self:get_wield_index(), stack)
+----    return true
 ----end
 ----
------- Static get functions
+------ Physical Proxy Methods (ia_fake_player Core)
 --------------------------------------------
 ----
-----function fake_player.is_player()
-----	return true
+----function fake_player:get_velocity() return entity_call(self, "get_velocity") or vector.zero() end
+----function fake_player:add_velocity(vel) return entity_call(self, "add_velocity", vel) end
+----function fake_player:set_velocity(vel) return entity_call(self, "set_velocity", vel) end
+----
+----function fake_player:punch(...) return entity_call(self, "punch", ...) end
+----function fake_player:right_click(clicker) return entity_call(self, "right_click", clicker) end
+----
+----function fake_player:get_armor_groups() return entity_call(self, "get_armor_groups") or {immortal=1} end
+----function fake_player:set_armor_groups(g) return entity_call(self, "set_armor_groups", g) end
+----
+----function fake_player:get_animation() return entity_call(self, "get_animation") end
+----function fake_player:set_animation(...) return entity_call(self, "set_animation", ...) end
+----function fake_player:set_animation_frame_speed(frame_speed) return entity_call(self, "set_animation_frame_speed", frame_speed) end
+----
+----function fake_player:get_attach() return entity_call(self, "get_attach") end
+----function fake_player:set_attach(...) return entity_call(self, "set_attach", ...) end
+----
+----function fake_player:get_children() return entity_call(self, "get_children") end
+----function fake_player:set_detach() return entity_call(self, "set_detach") end
+----
+----function fake_player:get_bone_position() return entity_call(self, "get_bone_position") end
+----function fake_player:set_bone_position(...) return entity_call(self, "set_bone_position", ...) end
+----
+----function fake_player:set_properties(props)
+----    for k, v in pairs(props) do self.data.properties[k] = v end
+----    return entity_call(self, "set_properties", props)
+----end
+----function fake_player:get_properties() -- NOTE was missing
+----	return entity_call(self, "get_properties")
 ----end
 ----
-----function fake_player.get_animation()
-----	return {x = 1, y = 1}, 15, 0, true
+----function fake_player:get_nametag_attributes() return entity_call(self, "get_nametag_attributes") end
+----function fake_player:set_nametag_attributes(vel) return entity_call(self, "set_nametag_attributes", vel) end
+----
+----function fake_player:remove() return entity_call(self, "remove") end
+----function fake_player:get_acceleration() return entity_call(self, "get_acceleration") end
+----function fake_player:set_acceleration(acc) return entity_call(self, "set_acceleration", acc) end
+----
+----function fake_player:get_rotation() return entity_call(self, "get_rotation") end
+----function fake_player:set_rotation(rot) return entity_call(self, "set_rotation", rot) end
+----
+----function fake_player:get_yaw() return entity_call(self, "get_yaw") end
+----function fake_player:set_yaw(yaw) return entity_call(self, "set_yaw", yaw) end
+----
+----function fake_player:get_texture_mod() return entity_call(self, "get_texture_mod") end
+----function fake_player:set_texture_mod(mod) return entity_call(self, "set_texture_mod", mod) end
+----
+----function fake_player:set_sprite(...) return entity_call(self, "set_sprite", ...) end
+----
+----function fake_player:get_look_dir() return entity_call(self, "get_look_dir") end
+----function fake_player:get_breath() return entity_call(self, "get_breath") end
+----function fake_player:set_breath(value) return entity_call(self, "set_breath", value) end
+----
+----function fake_player:get_fov() return entity_call(self, "get_fov") end
+----function fake_player:set_fov(fov, is_multiplier, transition_time) return entity_call(self, "set_fov", fov, is_multiplier, transition_time) end
+------function ia_fake_player:get_meta() return self.object:get_meta() end -- TODO ???
+----
+----function fake_player:get_physics_override() return entity_call(self, "get_physics_override") end
+----function fake_player:set_physics_override(override_table) return entity_call(self, "set_physics_override", override_table) end
+----
+----function fake_player:get_look_horizontal() return self.data.yaw or 0 end
+----function fake_player:set_look_horizontal(v) 
+----    self.data.yaw = v 
+----    entity_call(self, "set_look_horizontal", v)
 ----end
 ----
-----function fake_player.get_armor_groups()
-----	return {immortal = 1}
+----function fake_player:get_look_vertical() return self.data.pitch or 0 end
+----function fake_player:set_look_vertical(v) 
+----    self.data.pitch = v 
+----    entity_call(self, "set_look_vertical", v)
 ----end
 ----
-----function fake_player.get_bone_override()
-----	return {
-----		position = {absolute = false, vec = vector.zero(), interpolation = 0},
-----		rotation = {absolute = false, vec = vector.zero(), interpolation = 0},
-----		scale = {absolute = false, vec = vector.new(1, 1, 1), interpolation = 0},
-----	}
+----function fake_player:get_player_control()
+----    local res = {}
+----    for k, v in pairs(self.data.controls) do res[k] = v end
+----    res.LMB, res.RMB = res.dig, res.place
+----    return res
 ----end
 ----
-----function fake_player.get_bone_overrides()
-----	return {}
-----end
-----
-----function fake_player.get_bone_position()
-----	return vector.zero(), vector.zero()
-----end
-----
-----function fake_player.get_breath()
-----	return 10
-----end
-----
-----function fake_player.get_camera()
-----	return {mode = "any"}
-----end
-----
-----function fake_player.get_children()
-----	return {}
-----end
-----
-----function fake_player.get_clouds()
-----	return {
-----		ambient = {r = 0, g = 0, b = 0, a = 255},
-----		color = {r = 240, g = 240, b = 255, a = 229},
-----		density = 0.4,
-----		height = 120,
-----		speed = {x = 0, y = -2},
-----		thickness = 16,
-----	}
-----end
-----
-----function fake_player.get_eye_offset()
-----	return vector.zero(), vector.zero(), vector.zero()
-----end
-----
-----function fake_player.get_flags()
-----	return {
-----		breathing = true,
-----		drowning = true,
-----		node_damage = true,
-----	}
-----end
-----
-----function fake_player.get_formspec_prepend()
-----	return ""
-----end
-----
-----function fake_player.get_fov()
-----	return 0, false, 0
-----end
-----
-----function fake_player.get_hp()
-----	return 20
-----end
-----
-----function fake_player.get_inventory_formspec()
-----	return ""
-----end
-----
-----function fake_player.get_lighting()
-----	return {
-----		exposure = {
-----			speed_bright_dark = 1000,
-----			center_weight_power = 1,
-----			luminance_min = -3,
-----			luminance_max = -3,
-----			exposure_correction = 0,
-----			speed_dark_bright = 1000
-----		},
-----		saturation = 1,
-----		shadows = {intensity = 0},
-----		volumetric_light = {strength = 0},
-----	}
-----end
-----
-----function fake_player.get_local_animation()
-----	return {x = 0, y = 0}, {x = 0, y = 0}, {x = 0, y = 0}, {x = 0, y = 0}, 0
-----end
-----
-----function fake_player.get_moon()
-----	return {
-----		scale = 1,
-----		texture = "moon.png",
-----		tonemap = "moon_tonemap.png",
-----		visible = true,
-----	}
-----end
-----
-----function fake_player.get_nametag_attributes()
-----	return {
-----		bgcolor = false,
-----		color = {r = 255, g = 255, b = 255, a = 255},
-----		text = "",
-----	}
-----end
-----
-----function fake_player.get_physics_override()
-----	return {
-----		acceleration_air = 1, acceleration_default = 1, acceleration_fast = 1,
-----		gravity = 1, jump = 1, speed = 1,
-----		liquid_fluidity = 1, liquid_fluidity_smooth = 1, liquid_sink = 1,
-----		speed_climb = 1, speed_crouch = 1, speed_fast = 1, speed_walk = 1,
-----		new_move = true, sneak = true, sneak_glitch = false,
-----	}
-----end
-----
-------function fake_player.get_properties()
-------	return {
-------		automatic_face_movement_dir = false,
-------		automatic_face_movement_max_rotation_per_sec = -1,
-------		automatic_rotate = 0,
-------		backface_culling = false,
-------		breath_max = 10,
-------		collide_with_objects = true,
-------		collisionbox = {-0.5, -0.5, -0.5, 0.5, 0.5, 0.5},
-------		colors = {{r = 255, g = 255, b = 255, a = 255}},
-------		damage_texture_modifier = "^[brighten",
-------		eye_height = 0,
-------		glow = 0,
-------		hp_max = 20,
-------		infotext = "",
-------		initial_sprite_basepos = {x = 0, y = 0},
-------		is_visible = true,
-------		makes_footstep_sound = true,
-------		mesh = "",
-------		nametag = "",
-------		nametag_bgcolor = false,
-------		nametag_color = {r = 255, g = 255, b = 255, a = 255},
-------		physical = false,
-------		pointable = true,
-------		selectionbox = {-0.5, -0.5, -0.5, 0.5, 0.5, 0.5, rotate = false},
-------		shaded = true,
-------		show_on_minimap = true,
-------		spritediv = {x = 1, y = 1},
-------		static_save = true,
-------		stepheight = 0.6,
-------		textures = {"blank.png"},
-------		use_texture_alpha = false,
-------		visual = "cube",
-------		visual_size = vector.new(1, 1, 1),
-------		wield_item = "",
-------		zoom_fov = 15,
-------	}
-------end
-----
-----function fake_player.get_sky_color()
-----	return fake_player.get_sky(true).sky_color
-----end
-----
-----function fake_player.get_sky(as_table)
-----	if as_table then
-----		return {
-----			base_color = {r = 255, g = 255, b = 255, a = 255},
-----			clouds = true,
-----			fog = {fog_distance = -1, fog_start = -1},
-----			sky_color = {
-----				day_sky = {r = 97, g = 181, b = 245, a = 255},
-----				day_horizon = {r = 144, g = 211, b = 246, a = 255},
-----				dawn_sky = {r = 180, g = 186, b = 250, a = 255},
-----				dawn_horizon = {r = 186, g = 193, b = 240, a = 255},
-----				night_sky = {r = 0, g = 107, b = 255, a = 255},
-----				night_horizon = {r = 64, g = 144, b = 255, a = 255},
-----				indoors = {r = 100, g = 100, b = 100, a = 255},
-----				fog_sun_tint = {r = 244, g = 125, b = 29, a = 255},
-----				fog_moon_tint = {r = 128, g = 153, b = 204, a = 255},
-----				fog_tint_type = "default",
-----			},
-----			textures = {},
-----			type = "regular",
-----		}
-----	end
-----	return {r = 255, g = 255, b = 255, a = 255}, "regular", {}, true
-----end
-----
-----function fake_player.get_stars()
-----	return {
-----		count = 1000,
-----		day_opacity = 0,
-----		scale = 1,
-----		star_color = {r = 235, g = 235, b = 255, a = 105},
-----		visible = true,
-----	}
-----end
-----
-----function fake_player.get_sun()
-----	return {
-----		scale = 1,
-----		sunrise = "sunrisebg.png",
-----		sunrise_visible = true,
-----		texture = "sun.png",
-----		tonemap = "sun_tonemap.png",
-----		visible = true,
-----	}
-----end
-----
-------function fake_player.get_velocity()
-------	return vector.zero()
-------end
-----
-----function fake_player.hud_get_all()
-----	return {}
-----end
-----
-----function fake_player.hud_get_flags()
-----	return {
-----		basic_debug = false,
-----		breathbar = false,
-----		chat = false,
-----		crosshair = false,
-----		healthbar = false,
-----		hotbar = false,
-----		minimap = false,
-----		minimap_radar = false,
-----		wielditem = false,
-----	}
-----end
-----
-----function fake_player.hud_get_hotbar_image()
-----	return ""
-----end
-----
-----function fake_player.hud_get_hotbar_itemcount()
-----	return 8
-----end
-----
-----function fake_player.hud_get_hotbar_selected_image()
-----	return ""
-----end
-----
-----function fake_player.is_valid()
-----	return true
-----end
-----
------- No-op functions
+------ Static & No-Op Fallbacks
 --------------------------------------------
-----do
-----	local functions = {
-----		-- Lua entity only (no-op for players)
-----		--"get_acceleration",
-----		"get_entity_name", -- TODO
-----		--"get_luaentity", "get_rotation", "get_texture_mod", "get_yaw",
-----		"getacceleration", -- TODO
-----		--"getyaw", "remove",
-----		--"set_acceleration", "set_rotation", "set_sprite", "set_texture_mod", "set_velocity", "set_yaw",
-----		"setacceleration", -- TODO
-----		"setsprite", -- TODO
-----		"settexturemod", "setvelocity", "setyaw",
-----		-- Non-functional get/set functions
-----		"add_velocity", "get_attach", "get_attribute", "get_day_night_ratio",
-----		"get_observers", "get_effective_observers",
-----		"hud_add", "hud_change", "hud_get", "hud_remove", "hud_set_flags",
-----		"hud_set_hotbar_image", "hud_set_hotbar_itemcount",
-----		"hud_set_hotbar_selected_image", "override_day_night_ratio",
-----		--"set_animation",
-----		"set_animation_frame_speed",
-----		--"set_armor_groups",
-----		"set_attach", "set_attribute", "set_bone_override", "set_bone_position",
-----		"set_breath", "set_camera", "set_clouds", "set_detach",
-----		"set_eye_offset", "set_formspec_prepend", "set_flags", "set_fov",
-----		"set_hp", "set_inventory_formspec", "set_lighting",
-----		"set_local_animation", "set_minimap_modes", "set_moon",
-----		"set_nametag_attributes", "set_observers", "set_physics_override",
-------		"set_properties",
-----		"set_sky", "set_stars", "set_sun",
-----		-- Other functions that do nothing
-----		--"punch",
-----		"respawn", "right_click", "send_mapblock",
-----	}
-----	for _,func in ipairs(functions) do
-----		fake_player[func] = function() end
-----	end
-----end
 ----
--------
+----function fake_player.is_player() return true end
+----function fake_player.is_valid() return true end
+----function fake_player:get_luaentity() return entity_call(self, "get_luaentity") end
 ----
------- Returns the static default property table
 ----function fake_player.get_default_properties()
 ----    return {
 ----        visual = "mesh",
@@ -527,373 +1364,166 @@
 ----    }
 ----end
 ----
-----
------- Deprecated functions
---------------------------------------------
-----
-----function fake_player:get_look_pitch()
-----	return self:get_look_vertical() * -1
+------ Bulk No-Op for API Compatibility
+----do
+----    local noops = {
+----        "hud_add", "hud_remove", "hud_change", "hud_get", "hud_set_flags",
+----        "set_sky", "set_sun", "set_moon", "set_stars", "set_clouds",
+----        "override_day_night_ratio", "set_local_animation", "set_eye_offset"
+----    }
+----    for _, name in ipairs(noops) do
+----        fake_player[name] = function() end
+----    end
 ----end
 ----
-----function fake_player:get_look_yaw()
-----	return self:get_look_horizontal() + math.pi / 2
-----end
-----
-----fake_player.set_look_pitch = fake_player.set_look_vertical
-----fake_player.set_look_yaw = fake_player.set_look_horizontal
+------ Deprecated / Compatibility Aliases
 ----fake_player.getpos = fake_player.get_pos
 ----fake_player.setpos = fake_player.set_pos
-----fake_player.moveto = fake_player.set_pos
-----fake_player.getvelocity = fake_player.get_velocity
-----fake_player.add_player_velocity = fake_player.add_velocity
 ----fake_player.get_player_velocity = fake_player.get_velocity
 ----
+----return fake_player
 ----
+------ fakelib/player.lua
 ----
-----
------- Helper to route calls to the physical object if it exists
-----local function entity_call(self, method, ...)
-----    local obj = self.data.object
-----    if obj and obj:get_luaentity() then
-----        local func = obj[method]
-----        if type(func) == "function" then
-----            return func(obj, ...)
-----        end
-----    end
-----end
-----
------- 1. PHYSICAL PROXIES (from your ia_fake_player)
------- These ensure that when a mod calls player:set_x, the NPC actually moves/changes.
-----function fake_player:set_properties(props)
-----    self.data.properties = self.data.properties or fake_player.get_default_properties()
-----    for k, v in pairs(props) do self.data.properties[k] = v end
-----    return entity_call(self, "set_properties", props)
-----end
-----
-----function fake_player:set_animation(...)
-----    return entity_call(self, "set_animation", ...)
-----end
-----
-----function fake_player:set_armor_groups(groups)
-----    return entity_call(self, "set_armor_groups", groups)
-----end
-----
-----function fake_player:punch(...)
-----    return entity_call(self, "punch", ...)
-----end
-----
------- 2. STATEFUL OVERRIDES (The "fakelib" value-add)
------- We prioritize the stored DATA for these, but can sync with the object.
-----function fake_player:get_meta()
-----    if not self.data.metadata then
-----        self.data.metadata = fakelib.create_metadata()
-----    end
-----    return self.data.metadata
-----end
-----
-----function fake_player:get_inventory()
-----    if not self.data.inventory then
-----        self.data.inventory = fakelib.create_inventory({
-----            main = 32, craft = 9, hand = 1, armor = 6
-----        })
-----    end
-----    return self.data.inventory
-----end
-----
------- 3. UPDATED CONSTRUCTOR
 ----function fakelib.create_player(options)
 ----    local data = {}
-----    -- Bind the physical object immediately if provided
-----    if type(options) == "table" then
-----        data.object = options.object
-----        data.name = options.name or "unknown"
-----    else
-----        data.name = options or "unknown"
-----    end
 ----
-----    -- Initialize internal state containers
-----    data.properties = fake_player.get_default_properties()
+----    -- 1. Use the hard dependency!
+----    -- Create the physical proxy using ia_fake_player
+----    local proxy = ia_fake_player.new(options.object)
 ----
-----    return secure_table({data = data}, fake_player, identifier)
+----    -- 2. Define the State
+----    data.name = options.name or "unknown"
+----    data.inventory = fakelib.create_inventory({
+----        main = 32, craft = 9, hand = 1, armor = 6 -- FIXME missing fields -- FIXME should *NOT* contain armor
+----    })
+----    data.metadata = fakelib.create_metadata()
+----
+----    -- 3. The "Magic" Handoff
+----    -- We return a table that checks fakelib methods first,
+----    -- then falls back to the ia_fake_player proxy.
+----    return setmetatable({
+----        data = data,
+----        proxy = proxy,
+----        -- Add methods that require virtual state (Inv/Meta)
+----        get_player_name = function(self) return self.data.name end,
+----        get_inventory = function(self) return self.data.inventory end,
+----        get_meta = function(self) return self.data.metadata end,
+----        is_player = function() return true end,
+----    }, {
+----        -- FALLBACK: If a method isn't above (like set_physics_override),
+----        -- call it on the ia_fake_player proxy.
+----        __index = function(t, k)
+----            return t.proxy[k]
+----        end
+----    })
 ----end
 --
+--
+--
 ---- fakelib/player.lua
----- FIXME completely attempts to duplicate the underlying ia_fake_player... shouldn't all that entity_call stuff not exist at all, since we're supposed to be built on top of ia_fakeplayer ????????
---
---local fake_player = {is_fake_player = true}
 --local identifier = "fakelib:player"
---local check, secure_table = ...
+--local _, secure_table = ...
 --
---local player_controls = {
---    up = 1, down = 2, left = 4, right = 8, jump = 16,
---    aux1 = 32, sneak = 64, dig = 128, place = 256, zoom = 512,
+---- Method definitions for the Fakelib State Layer
+--local fake_player_methods = {
+--    is_player = function() return true end,
+--    is_valid = function() return true end,
+--    get_player_name = function(self) return self.data.name end,
+--    get_inventory = function(self) return self.data.inventory end,
+--    get_meta = function(self) return self.data.metadata end,
 --}
 --
----- Internal Helpers
-------------------------------------------
---
---local function check_vector(v)
---    if type(v) ~= "table" or type(v.x) ~= "number" or type(v.y) ~= "number" or type(v.z) ~= "number" then
---        error(string.format("Invalid vector (expected {x,y,z}, got %s)", type(v)), 3)
---    end
+---- Helper to verify the object is actually an ia_fake_player instance
+--local function is_proxy(obj)
+--    return type(obj) == "table" and obj.object ~= nil
 --end
 --
---local function entity_call(self, method, ...)
---    local obj = self.data.object
---    -- Ensure object exists and is still a valid Luanti ObjectRef
---    if obj and obj:get_pos() then
---        local func = obj[method]
---        if type(func) == "function" then
---            return func(obj, ...)
+----- Bridges a Minetest ObjectRef (engine entity) to a Fakelib Player Proxy.
+---- This allows methods called on the raw object to be handled by the proxy if
+---- they aren't standard engine methods, or if they are overridden by the entity definition.
+---- @param object The raw Minetest ObjectRef.
+---- @param entity The Lua entity table (self).
+---- @param proxy The Fakelib player proxy returned by fakelib.create_player.
+--function fakelib.bridge_object(object, entity, proxy)
+--    assert(object ~= nil, "Cannot bridge nil object")
+--    assert(entity ~= nil, "Cannot bridge nil entity")
+--    assert(proxy ~= nil, "Cannot bridge nil proxy")
+--
+--    local mt = getmetatable(object)
+--    assert(mt ~= nil, "ObjectRef is missing metatable")
+--
+--    local old_index = mt.__index
+--    assert(old_index ~= nil, "ObjectRef metatable is missing __index")
+--
+--    mt.__index = function(obj, key)
+--        -- 1. Check the entity definition (self) for custom methods/properties
+--        if entity[key] ~= nil then
+--            return entity[key]
+--        end
+--
+--        -- 2. Check the fake_player proxy (fakelib state/proxy layer)
+--        if proxy[key] ~= nil then
+--            return proxy[key]
+--        end
+--
+--        -- 3. Fallback to standard ObjectRef methods (get_pos, set_hp, etc.)
+--        if type(old_index) == "function" then
+--            return old_index(obj, key)
+--        else
+--            return old_index[key]
 --        end
 --    end
+--
+--    setmetatable(object, mt)
 --end
 --
----- API functions
-------------------------------------------
---
---function fakelib.is_player(x)
---    if type(x) == "userdata" and x.is_player and x:is_player() then
---        return true
---    elseif type(x) == "table" and getmetatable(x) == identifier then
---        return true
---    end
---    return false
---end
---
+---- Constructor
 --function fakelib.create_player(options)
 --    local data = {}
---    
---    -- 1. Identity & Physical Link
---    if type(options) == "table" then
---        data.object = options.object
---        data.name = options.name or "unknown"
---        data.position = options.position and vector.copy(options.position)
---    else
---        data.name = options or "unknown"
---    end
+--    local input = type(options) == "table" and options or { name = options }
 --
---    -- 2. Initialize Persistent State
---    data.properties = fake_player.get_default_properties()
+--    -- 1. Initialize State
+--    data.name = input.name or "unknown"
 --    data.metadata = fakelib.create_metadata()
 --    data.inventory = fakelib.create_inventory({
---        main = 32, craft = 9, craftpreview = 1, craftresult = 1, hand = 1, --armor = 6
+--        main = 32,
+--        craft = 9,
+--        craftpreview = 1,
+--        craftresult = 1,
+--        hand = 1
 --    })
---    
---    -- 3. Controls Setup
---    data.controls = {}
---    for name in pairs(player_controls) do data.controls[name] = false end
 --
---    return secure_table({data = data}, fake_player, identifier)
---end
+--    -- 2. Bind the Physical Proxy
+--    -- We assume ia_fake_player has a .new() or similar constructor
+--    local proxy = ia_fake_player.new(input.object)
 --
----- Persistent State Methods (Fakelib Core)
-------------------------------------------
---
---function fake_player:get_player_name() return self.data.name or "" end
---function fake_player:get_inventory() return self.data.inventory end
---function fake_player:get_meta() return self.data.metadata end
---
---function fake_player:get_pos()
---    return entity_call(self, "get_pos") or vector.copy(self.data.position or vector.zero())
---end
---
---function fake_player:set_pos(pos)
---    check_vector(pos)
---    self.data.position = vector.copy(pos)
---    entity_call(self, "set_pos", pos)
---end
---fake_player.move_to = fake_player.set_pos
---
---function fake_player:get_hp() return self.data.hp or 20 end
---function fake_player:set_hp(hp) self.data.hp = hp end
---
---function fake_player:get_wield_index() return self.data.wield_index or 1 end
---function fake_player:get_wield_list() return self.data.wield_list or "main" end
---
---function fake_player:get_wielded_item()
---    return self:get_inventory():get_stack(self:get_wield_list(), self:get_wield_index())
---end
---
---function fake_player:set_wielded_item(stack)
---    self:get_inventory():set_stack(self:get_wield_list(), self:get_wield_index(), stack)
---    return true
---end
---
----- Physical Proxy Methods (ia_fake_player Core)
-------------------------------------------
---
---function fake_player:get_velocity() return entity_call(self, "get_velocity") or vector.zero() end
---function fake_player:add_velocity(vel) return entity_call(self, "add_velocity", vel) end
---function fake_player:set_velocity(vel) return entity_call(self, "set_velocity", vel) end
---
---function fake_player:punch(...) return entity_call(self, "punch", ...) end
---function fake_player:right_click(clicker) return entity_call(self, "right_click", clicker) end
---
---function fake_player:get_armor_groups() return entity_call(self, "get_armor_groups") or {immortal=1} end
---function fake_player:set_armor_groups(g) return entity_call(self, "set_armor_groups", g) end
---
---function fake_player:get_animation() return entity_call(self, "get_animation") end
---function fake_player:set_animation(...) return entity_call(self, "set_animation", ...) end
---function fake_player:set_animation_frame_speed(frame_speed) return entity_call(self, "set_animation_frame_speed", frame_speed) end
---
---function fake_player:get_attach() return entity_call(self, "get_attach") end
---function fake_player:set_attach(...) return entity_call(self, "set_attach", ...) end
---
---function fake_player:get_children() return entity_call(self, "get_children") end
---function fake_player:set_detach() return entity_call(self, "set_detach") end
---
---function fake_player:get_bone_position() return entity_call(self, "get_bone_position") end
---function fake_player:set_bone_position(...) return entity_call(self, "set_bone_position", ...) end
---
---function fake_player:set_properties(props)
---    for k, v in pairs(props) do self.data.properties[k] = v end
---    return entity_call(self, "set_properties", props)
---end
---function fake_player:get_properties() -- NOTE was missing
---	return entity_call(self, "get_properties")
---end
---
---function fake_player:get_nametag_attributes() return entity_call(self, "get_nametag_attributes") end
---function fake_player:set_nametag_attributes(vel) return entity_call(self, "set_nametag_attributes", vel) end
---
---function fake_player:remove() return entity_call(self, "remove") end
---function fake_player:get_acceleration() return entity_call(self, "get_acceleration") end
---function fake_player:set_acceleration(acc) return entity_call(self, "set_acceleration", acc) end
---
---function fake_player:get_rotation() return entity_call(self, "get_rotation") end
---function fake_player:set_rotation(rot) return entity_call(self, "set_rotation", rot) end
---
---function fake_player:get_yaw() return entity_call(self, "get_yaw") end
---function fake_player:set_yaw(yaw) return entity_call(self, "set_yaw", yaw) end
---
---function fake_player:get_texture_mod() return entity_call(self, "get_texture_mod") end
---function fake_player:set_texture_mod(mod) return entity_call(self, "set_texture_mod", mod) end
---
---function fake_player:set_sprite(...) return entity_call(self, "set_sprite", ...) end
---
---function fake_player:get_look_dir() return entity_call(self, "get_look_dir") end
---function fake_player:get_breath() return entity_call(self, "get_breath") end
---function fake_player:set_breath(value) return entity_call(self, "set_breath", value) end
---
---function fake_player:get_fov() return entity_call(self, "get_fov") end
---function fake_player:set_fov(fov, is_multiplier, transition_time) return entity_call(self, "set_fov", fov, is_multiplier, transition_time) end
-----function ia_fake_player:get_meta() return self.object:get_meta() end -- TODO ???
---
---function fake_player:get_physics_override() return entity_call(self, "get_physics_override") end
---function fake_player:set_physics_override(override_table) return entity_call(self, "set_physics_override", override_table) end
---
---function fake_player:get_look_horizontal() return self.data.yaw or 0 end
---function fake_player:set_look_horizontal(v) 
---    self.data.yaw = v 
---    entity_call(self, "set_look_horizontal", v)
---end
---
---function fake_player:get_look_vertical() return self.data.pitch or 0 end
---function fake_player:set_look_vertical(v) 
---    self.data.pitch = v 
---    entity_call(self, "set_look_vertical", v)
---end
---
---function fake_player:get_player_control()
---    local res = {}
---    for k, v in pairs(self.data.controls) do res[k] = v end
---    res.LMB, res.RMB = res.dig, res.place
---    return res
---end
---
----- Static & No-Op Fallbacks
-------------------------------------------
---
---function fake_player.is_player() return true end
---function fake_player.is_valid() return true end
---function fake_player:get_luaentity() return entity_call(self, "get_luaentity") end
---
---function fake_player.get_default_properties()
---    return {
---        visual = "mesh",
---        mesh = "character.b3d",
---        textures = {"character.png"},
---        visual_size = {x=1, y=1, z=1},
---        collisionbox = {-0.3, 0.0, -0.3, 0.3, 1.7, 0.3},
---        stepheight = 0.6,
---        eye_height = 1.62,
---        hp_max = 20,
---        breath_max = 10,
---        physical = true,
---        pointable = true,
---        is_visible = true,
---        makes_footstep_sound = true,
---    }
---end
---
----- Bulk No-Op for API Compatibility
---do
---    local noops = {
---        "hud_add", "hud_remove", "hud_change", "hud_get", "hud_set_flags",
---        "set_sky", "set_sun", "set_moon", "set_stars", "set_clouds",
---        "override_day_night_ratio", "set_local_animation", "set_eye_offset"
---    }
---    for _, name in ipairs(noops) do
---        fake_player[name] = function() end
---    end
---end
---
----- Deprecated / Compatibility Aliases
---fake_player.getpos = fake_player.get_pos
---fake_player.setpos = fake_player.set_pos
---fake_player.get_player_velocity = fake_player.get_velocity
---
---return fake_player
---
----- fakelib/player.lua
---
---function fakelib.create_player(options)
---    local data = {}
---
---    -- 1. Use the hard dependency!
---    -- Create the physical proxy using ia_fake_player
---    local proxy = ia_fake_player.new(options.object)
---
---    -- 2. Define the State
---    data.name = options.name or "unknown"
---    data.inventory = fakelib.create_inventory({
---        main = 32, craft = 9, hand = 1, armor = 6 -- FIXME missing fields -- FIXME should *NOT* contain armor
---    })
---    data.metadata = fakelib.create_metadata()
---
---    -- 3. The "Magic" Handoff
---    -- We return a table that checks fakelib methods first,
---    -- then falls back to the ia_fake_player proxy.
---    return setmetatable({
+--    -- 3. Build the Composite Object
+--    local instance = {
 --        data = data,
---        proxy = proxy,
---        -- Add methods that require virtual state (Inv/Meta)
---        get_player_name = function(self) return self.data.name end,
---        get_inventory = function(self) return self.data.inventory end,
---        get_meta = function(self) return self.data.metadata end,
---        is_player = function() return true end,
---    }, {
---        -- FALLBACK: If a method isn't above (like set_physics_override),
---        -- call it on the ia_fake_player proxy.
+--        proxy = proxy
+--    }
+--
+--    -- 4. Setup Delegation Logic
+--    local mt = {
 --        __index = function(t, k)
+--            -- Check fakelib state methods first
+--            if fake_player_methods[k] then
+--                return fake_player_methods[k]
+--            end
+--            -- Fallback: Call the physical proxy (ia_fake_player)
 --            return t.proxy[k]
 --        end
---    })
+--    }
+--
+--    return setmetatable(instance, mt)
 --end
-
-
-
+--
+---- Export for type checking
+--fakelib.player_identifier = identifier
 -- fakelib/player.lua
-local identifier = "fakelib:player"
-local _, secure_table = ...
 
--- Helper to verify the object is actually an ia_fake_player instance
-local function is_proxy(obj)
-    return type(obj) == "table" and obj.object ~= nil
-end
-
--- Method definitions for the Fakelib State Layer
+-- Define methods for the Fakelib State Layer
 local fake_player_methods = {
     is_player = function() return true end,
     is_valid = function() return true end,
@@ -902,7 +1532,44 @@ local fake_player_methods = {
     get_meta = function(self) return self.data.metadata end,
 }
 
--- Constructor
+--- Universal Proxy Bridge
+--- Instead of modifying the ObjectRef metatable (which causes crashes),
+--- this helper ensures the Lua entity table (self) can act as a proxy
+--- for both the engine object and the fakelib player state.
+-- @param object The raw Minetest ObjectRef (self.object).
+-- @param entity The Lua entity table (self).
+-- @param proxy The Fakelib player proxy (self.fake_player).
+function fakelib.bridge_object(object, entity, proxy)
+    -- Assertions to catch nil references early in the init chain
+    assert(object ~= nil, "[fakelib] Cannot bridge a nil ObjectRef")
+    assert(entity ~= nil, "[fakelib] Cannot bridge a nil Lua entity")
+    assert(proxy ~= nil,  "[fakelib] Cannot bridge a nil player proxy")
+
+    -- We set the metatable of the Lua Entity (self) so that 
+    -- calls like self:get_player_name() or self:get_pos() work seamlessly.
+    local mt = getmetatable(entity) or {}
+    
+    mt.__index = function(t, k)
+        -- 1. Check the fakelib proxy first (is_player, get_player_name, etc.)
+        if proxy[k] ~= nil then
+            return proxy[k]
+        end
+        
+        -- 2. Fallback: Standard ObjectRef methods (get_pos, set_hp, etc.)
+        -- We call them on the raw object
+        if type(object[k]) == "function" then
+            return function(inner_t, ...)
+                return object[k](object, ...)
+            end
+        end
+        
+        return object[k]
+    end
+
+    setmetatable(entity, mt)
+end
+
+-- Constructor for the Fakelib Player Proxy
 function fakelib.create_player(options)
     local data = {}
     local input = type(options) == "table" and options or { name = options }
@@ -912,36 +1579,65 @@ function fakelib.create_player(options)
     data.metadata = fakelib.create_metadata()
     data.inventory = fakelib.create_inventory({
         main = 32,
+        --armor = 6, -- Support armor slots by default NOTE DO NOT FUCK WITH ARMOR AT THIS LEVEL
         craft = 9,
         craftpreview = 1,
         craftresult = 1,
         hand = 1
     })
 
-    -- 2. Bind the Physical Proxy
-    -- We assume ia_fake_player has a .new() or similar constructor
-    local proxy = ia_fake_player.new(input.object)
+    -- 2. Bind the Physical Proxy (wrapper for engine calls)
+    -- We assume ia_fake_player is defined and has a .new() constructor
+    assert(ia_fake_player ~= nil, "[fakelib] ia_fake_player is not initialized")
+    
+    -- Create the physical wrapper
+    local physical_proxy = {}
+    physical_proxy.object = input.object
+    
+    -- Copy methods from ia_fake_player to the physical_proxy
+    for k, v in pairs(ia_fake_player) do
+        if type(v) == "function" then
+            physical_proxy[k] = v
+        end
+    end
 
     -- 3. Build the Composite Object
     local instance = {
         data = data,
-        proxy = proxy
+        proxy = physical_proxy,
+        object = input.object -- Keep reference to raw engine object
     }
 
-    -- 4. Setup Delegation Logic
+    -- 4. Setup Delegation Logic for the Proxy itself
     local mt = {
         __index = function(t, k)
-            -- Check fakelib state methods first
+            -- A. Check fakelib state methods (is_player, get_player_name)
             if fake_player_methods[k] then
-                return fake_player_methods[k]
+                -- Return a function that passes 'instance' as self
+                return function(inner_t, ...)
+                    return fake_player_methods[k](instance, ...)
+                end
             end
-            -- Fallback: Call the physical proxy (ia_fake_player)
-            return t.proxy[k]
+            
+            -- B. Check physical proxy (ia_fake_player wrapper)
+            if physical_proxy[k] then
+                return function(inner_t, ...)
+                    return physical_proxy[k](physical_proxy, ...)
+                end
+            end
+            
+            -- C. Last resort: direct engine object calls
+            if instance.object and instance.object[k] then
+                if type(instance.object[k]) == "function" then
+                    return function(inner_t, ...)
+                        return instance.object[k](instance.object, ...)
+                    end
+                end
+                return instance.object[k]
+            end
         end
     }
+    setmetatable(instance, mt)
 
-    return setmetatable(instance, mt)
+    return instance
 end
-
--- Export for type checking
-fakelib.player_identifier = identifier

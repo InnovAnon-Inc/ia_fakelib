@@ -1,3 +1,4 @@
+-- TODO need to maintain detached inventory which mirrors this (will require special handling in player.lua / fake_player.lua); see 3d_armor
 
 local fake_inventory = {}
 local identifier = "fakelib:inventory"
